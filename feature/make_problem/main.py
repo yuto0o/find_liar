@@ -6,8 +6,8 @@ from typing import Dict, List, Tuple
 # =========================
 # 設定パラメータ
 # =========================
-NUM_PEOPLE = 10  # 登場人物数（A, B, C...）
-MAX_SOLUTIONS = 6  # Noneなら制限なし、整数で解の数を制限
+NUM_PEOPLE = 15  # 登場人物数（A, B, C...）
+MAX_SOLUTIONS = 8  # Noneなら制限なし、整数で解の数を制限
 SEED = None  # 再現性が欲しい場合は整数を入れる
 CURRENT_PATH = Path(__file__)
 OUTPUT_FILE = CURRENT_PATH.parent / "puzzle.txt"
