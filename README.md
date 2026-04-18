@@ -72,3 +72,14 @@ print(df.groupby('repaired').size())
 
 このリポジトリでやりたいことや追加したい機能があれば教えてください。README の追記・整形、例の追加も対応します。
 
+
+Large Language Model:
+
+[llm-jp-4-8b-thinking](https://huggingface.co/llm-jp/llm-jp-4-8b-thinking) by LLM-jp (Apache License 2.0)
+
+Quantized GGUF version by [alfredplpl](https://huggingface.co/alfredplpl/llm-jp-4-8b-thinking-gguf)
+
+Embedding Model:
+
+[multilingual-e5-base](https://huggingface.co/intfloat/multilingual-e5-base) by intfloat (MIT License)
+
