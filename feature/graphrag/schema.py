@@ -1,55 +1,39 @@
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 
+# Primary edge model used by the extractor
 class Edge(BaseModel):
-    source: str = Field(..., description="話者")
-    target: str = Field(..., description="対象人物")
-    relation: str = Field(
-        ...,
-        description="関係ラベル。可能であれば 'supports'/'contradicts'/'same' に正規化されます。",
+    source: str = Field(..., description="接続元のノード名")
+    target: str = Field(..., description="接続先のノード名")
+    relation: Literal["supports", "contradicts", "same"] = Field(
+        ..., description="関係性（supports|contradicts|same）"
     )
-
-    @validator("source", "target")
-    def not_empty_and_reasonable_length(cls, v: str):
-        if not isinstance(v, str) or not v.strip():
-            raise ValueError("source/target must be a non-empty string")
-        v = v.strip()
-        if len(v) > 64:
-            raise ValueError("source/target is too long")
-        return v
-
-    @validator("relation")
-    def normalize_relation(cls, v: str):
-        if not isinstance(v, str) or not v.strip():
-            raise ValueError("relation must be a non-empty string")
-        mapping = {
-            "支持": "supports",
-            "supports": "supports",
-            "support": "supports",
-            "支持する": "supports",
-            "矛盾": "contradicts",
-            "反論": "contradicts",
-            "contradicts": "contradicts",
-            "同一": "same",
-            "同一人物": "same",
-            "same": "same",
-        }
-        key = v.strip()
-        # try exact mapping first
-        if key in mapping:
-            return mapping[key]
-        # try lowercased english
-        low = key.lower()
-        if low in mapping:
-            return mapping[low]
-        # otherwise return raw string (preserve information)
-        return key
 
 
 class GraphOutput(BaseModel):
     edges: List[Edge]
-    explanation: Optional[str] = Field(
-        None, description="モデルが付与する追加の説明や思考過程（任意）"
+    explanation: Optional[str] = Field(None, description="任意の説明や思考過程")
+
+
+# Backwards-compatible schema for tools that expect a richer extraction schema
+class NetworkNode(BaseModel):
+    name: str = Field(..., description="サーバーの名前（例: Kilo, Quebecなど）")
+
+
+class NetworkEdge(BaseModel):
+    source: str = Field(..., description="接続元のサーバー名")
+    target: str = Field(..., description="接続先のサーバー名")
+
+
+class GraphExtractionSchema(BaseModel):
+    thought_process: Optional[str] = Field(
+        None, description="抽出を行う際の思考プロセス"
+    )
+    nodes: Optional[List[NetworkNode]] = Field(
+        None, description="抽出されたノードのリスト"
+    )
+    edges: Optional[List[NetworkEdge]] = Field(
+        None, description="サーバー間の接続リスト"
     )

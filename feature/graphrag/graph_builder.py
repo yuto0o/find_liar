@@ -1,20 +1,21 @@
-from typing import List
+import networkx as nx
 
-from feature.graphrag.schema import Edge
+from .schema import GraphExtractionSchema
 
 
-class Graph:
+class GraphBuilder:
     def __init__(self):
-        self.edges: List[Edge] = []
+        self.G = nx.Graph()
 
-    def add_edges(self, edges):
-        if not isinstance(edges, (list, tuple)):
-            raise TypeError("edges must be a list of Edge or dict")
-        for e in edges:
-            if isinstance(e, dict):
-                e = Edge(**e)
-            elif isinstance(e, Edge):
-                pass
-            else:
-                raise TypeError("each edge must be a dict or Edge instance")
-            self.edges.append(e)
+    def build_from_schema(self, extracted_data: GraphExtractionSchema):
+        for edge in extracted_data.edges:
+            self.G.add_edge(edge.source, edge.target)
+
+    # LLMに渡すための「お膳立て」機能
+    def get_context_for_llm(self) -> str:
+        # 例：各ノードがどこに繋がっているかを箇条書きにして出力
+        context = "【ネットワーク構造】\n"
+        for node in self.G.nodes():
+            neighbors = list(self.G.neighbors(node))
+            context += f"- {node} は {', '.join(neighbors)} と接続されています。\n"
+        return context

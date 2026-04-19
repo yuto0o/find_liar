@@ -11,6 +11,45 @@ from feature.outputs import next_version_dir, save_attempt, save_meta, save_pars
 logger = logging.getLogger(__name__)
 
 
+def _normalize_relation(rel: Optional[str]) -> str:
+    """Normalize relation strings (Japanese/English) to canonical literals.
+
+    Returns one of: 'supports', 'contradicts', 'same', or the original string
+    if no mapping is found.
+    """
+    if rel is None:
+        return ""
+    if not isinstance(rel, str):
+        rel = str(rel)
+    r = rel.strip().lower()
+    mapping = {
+        "支持": "supports",
+        "支持する": "supports",
+        "賛成": "supports",
+        "support": "supports",
+        "supports": "supports",
+        "矛盾": "contradicts",
+        "矛盾する": "contradicts",
+        "反対": "contradicts",
+        "contradict": "contradicts",
+        "contradicts": "contradicts",
+        "同じ": "same",
+        "一致": "same",
+        "同様": "same",
+        "same": "same",
+    }
+    if r in mapping:
+        return mapping[r]
+    # fallback heuristics
+    if "支持" in rel or "賛成" in rel or "support" in r:
+        return "supports"
+    if "矛盾" in rel or "反対" in rel or "contrad" in r:
+        return "contradicts"
+    if "同" in rel or "一致" in rel or "same" in r:
+        return "same"
+    return rel
+
+
 def _extract_json_from_fenced(raw: str) -> Optional[str]:
     # Try triple-backtick fences first (```json ... ``` or ``` ... ```)
     m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw, flags=re.S | re.I)
@@ -169,7 +208,8 @@ def extract_graph(text: str):
                         if m:
                             src = m.group(1).strip()
                             tgt = m.group(2).strip()
-                            rel = v if isinstance(v, str) else str(v)
+                            raw_rel = v if isinstance(v, str) else str(v)
+                            rel = _normalize_relation(raw_rel)
                             edges_list.append(
                                 {"source": src, "target": tgt, "relation": rel}
                             )
@@ -180,6 +220,15 @@ def extract_graph(text: str):
             if isinstance(data, list):
                 if data and isinstance(data[0], dict) and "source" in data[0]:
                     data = {"edges": data}
+
+            # normalize relation strings to canonical literals
+            if isinstance(data, dict) and "edges" in data:
+                for e in data["edges"]:
+                    if "relation" in e:
+                        try:
+                            e["relation"] = _normalize_relation(e["relation"])
+                        except Exception:
+                            pass
 
             # Extract explanation from repaired_raw if not present
             if isinstance(data, dict) and not data.get("explanation"):

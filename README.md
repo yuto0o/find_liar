@@ -70,6 +70,44 @@ print(df.groupby('repaired').size())
 
 ---
 
+## 今回の更新（短いまとめ）
+
+- `feature/graphrag/schema.py`, `feature/graphrag/extractor.py` の改善: 抽出スキーマの強化と relation の正規化（日本語表記対応）。
+- `feature/llm/lightrag_adapter.py` を追加: 同期な Llama 呼び出しと埋め込みを非同期インターフェースへ適合させる adapter を提供。
+- `feature/main.py` の LightRAG 呼び出しを堅牢化: ライブラリのコンストラクタシグネチャを動的に検出して必要な引数を渡すようにし、埋め込み関数を LightRAG が期待する `EmbeddingFunc` へ自動的にラップする処理を追加しました。また、内部のロギング import によるスコープ問題を修正しました。
+
+## `feature/main.py` 実行時の注意
+
+- 実行コマンド:
+
+```bash
+python -m feature.main      # LightRAG 統合を試行
+python -m feature.main --no-lightrag   # LightRAG を使わずローカルパイプラインのみ
+```
+
+- 端末が入力待ちになるケース:
+	- LLM ライブラリ（例: llama.cpp / llama-cpp-python）が起動時に追加の確認や進行キーを要求することがあります。多くの場合は `Enter` を押すだけで続行できます。
+	- モデルファイルが見つからずダウンロード確認を求められた場合は `y`（あるいは `Enter`）でダウンロードを許可するか、事前に環境変数 `MODEL_PATH` にローカルのモデルファイルパスを設定してください。
+	- LightRAG 側で設定の対話入力が出ることは稀ですが、もし `path` や `storage` の入力を促されたら、作業ディレクトリ内の `./rag_storage` や任意の保存先パスを指定してください。
+
+- クエリを手動で指定したい場合は、`feature/main.py` 内の `query` 変数を変更するか、今後の拡張で `--query` オプションを追加してください。デフォルトは日本語テスト用の `"嘘つきは誰か？"` になっています。
+
+## GPU が動作しているかの簡易確認
+
+- 実行ログ中に以下のような行が出力されていれば、CUDA（GPU）が利用されていることを示します。
+
+	- `CUDA graph warmup complete`
+	- `CUDA0 compute buffer size is ... MiB, matches expectation`
+
+- システム側での確認コマンド例:
+
+```bash
+nvidia-smi        # NVIDIA GPU がある場合
+# または CUDA を使うコードでのログを確認
+```
+
+---
+
 このリポジトリでやりたいことや追加したい機能があれば教えてください。README の追記・整形、例の追加も対応します。
 
 
